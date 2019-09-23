@@ -114,7 +114,9 @@ def get_proof(sexp_cache, args):
     loc2code = get_code(open(coq_filename, 'rb').read())
     meta = open(args.file).read()
     coq_code = extract_code(meta, loc2code)
-    file_data = json.load(open(os.path.join(args.data_path, args.file[13:-5] + '.json')))
+    #################################################3
+    file_data = json.load(open(os.path.join(args.data_path, args.file[0:-5] + '.json')))
+    ###################################################
 
     with SerAPI(args.timeout, args.debug) as serapi:
         num_extra_cmds = len(set_paths(meta, serapi, sexp_cache))

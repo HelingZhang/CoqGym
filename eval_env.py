@@ -212,6 +212,7 @@ class FileEnv:
 
 
 if __name__ == '__main__':
+    # f = 'data/additions/binary_strat.json'
     f = 'data/StructTact/Assoc.json'
     print(f)
     with FileEnv(f, max_num_tactics=100, timeout=600) as file_env:

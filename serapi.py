@@ -385,6 +385,24 @@ class SerAPI:
 if __name__ == '__main__':
     import random
     random.seed(1)
-    with SerAPI() as serapi:
-        serapi.execute('Require Import Coq.Program.Basics.')
-        serapi.execute('Locate "_ ∘ _".')
+    with SerAPI(1000) as serapi:
+        # response, _ = serapi.execute('Require Import Coq.Program.Basics.')
+        # print(response)
+        response, ast = serapi.send('Require Import List. ')
+        print(response)
+        # response, ast = serapi.execute('Inductive bool : Type := | true | false.')
+        # print(response)
+        # response, ast = serapi.execute('Check true.')
+        # print(response)
+        # response, ast = serapi.execute('Theorem plus_id_example : forall n m:nat, n = m -> n + n = m + m.')
+        # print(response)
+        # response, ast = serapi.execute('Proof.')
+        # print(response)
+        # response, ast = serapi.execute('intros n m.')
+        # print(response)
+        # response, ast = serapi.execute('intros H.')
+        # print(response)
+        # rewrite -> H.
+        # reflexivity.Qed.
+        # response, _ = serapi.execute('Definition negb (b:bool) : bool := match b with | true => false | false => true end.')
+        # print(response)
