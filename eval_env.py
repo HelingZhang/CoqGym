@@ -218,14 +218,13 @@ if __name__ == '__main__':
     with FileEnv(f, max_num_tactics=100, timeout=600) as file_env:
         for proof_env in file_env:
 
-            if proof_env.proof['name'] != "get_set_same'":
-                continue
+            # if proof_env.proof['name'] != "get_set_same'":
+            #     continue
 
             print(proof_env.proof['name'])
             proof_env.init()
 
             commands = [step['command'][0] for step in proof_env.proof['steps']]
-            # steps = [cmd + '.' for cmd in steps]
             print(commands)
             for cmd in commands:
                 print(cmd)
