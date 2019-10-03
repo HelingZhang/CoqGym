@@ -115,7 +115,10 @@ def get_proof(sexp_cache, args):
     meta = open(args.file).read()
     coq_code = extract_code(meta, loc2code)
     #################################################3
-    temp_f_name = os.path.join(args.data_path + args.file[12:-5] + '.json')
+    # temp_f_name = os.path.join(args.data_path + args.file[12:-5] + '.json')
+    coqproject = args.file.split('/')[-2]
+    fname = args.file.split('/')[-1][:-5]
+    temp_f_name = os.path.join(args.data_path, coqproject, fname + '.json')
     file_data = json.load(open(temp_f_name))
     ###################################################
 
