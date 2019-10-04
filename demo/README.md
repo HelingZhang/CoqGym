@@ -3,4 +3,4 @@ Given an arbitrary proof in `scratch.v`, extract information including proof tre
 2.  run `make`
 3.  run `bash extract_json.sh`
 
-Now there should be a `scratch.json` under `CoqGym/data/demo`. This file contains information about every proof in `scratch.v`. We can use `scratch.json` to interact with CoqGym's proof evaluation api by running `python eval_env.py -file data/demo/scratch.json`.
+Now there should be a `scratch.json` under `CoqGym/data/demo`. This file contains information about every proof in `scratch.v`. We can use `scratch.json` to interact with CoqGym's proof evaluation api by running `python eval_env.py --file data/demo/scratch.json`.

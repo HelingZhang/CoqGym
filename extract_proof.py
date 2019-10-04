@@ -57,7 +57,7 @@ def record_proof(num_extra_cmds, line_nb, script, sexp_cache, serapi, args):
     constants, inductives = serapi.query_env(args.file[:-5] + '.vo')
     serapi.set_timeout(args.timeout)
     for const in constants:
-        const['sexp']   = sexp_cache.dump(const['sexp'])
+        const['sexp'] = sexp_cache.dump(const['sexp'])
     for induct in inductives:
         induct['sexp'] = sexp_cache.dump(induct['sexp'])
     proof_data['env'] = {
