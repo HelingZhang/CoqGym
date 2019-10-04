@@ -212,13 +212,27 @@ class FileEnv:
 
 
 if __name__ == '__main__':
+    import argparse
+
+    argparser = argparse.ArgumentParser(description='test evaluation api.')
+    argparser.add_argument('--file', type=str, help='The path of target json file, which is obtained from *.meta (refer to README)')
+    args = argparser.parse_args()
+
     # f = 'data/additions/binary_strat.json'
-    f = 'data/StructTact/Assoc.json'
+    # f = 'data/StructTact/Assoc.json'
+    # f = 'data/demo/scratch.json'
+    f = args.file
+
+    # target_proof = ['get_set_same',
+    #                 'mult_S_1'
+    #                 ]
+
     print(f)
     with FileEnv(f, max_num_tactics=100, timeout=600) as file_env:
         for proof_env in file_env:
 
-            # if proof_env.proof['name'] != "get_set_same'":
+            # to test only one target proof:
+            # if proof_env.proof['name'] not in target_proof:
             #     continue
 
             print(proof_env.proof['name'])
