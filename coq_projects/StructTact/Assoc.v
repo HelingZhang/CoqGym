@@ -47,13 +47,8 @@ Section assoc.
   Lemma get_set_same :
     forall k v l,
       assoc (assoc_set l k v) k = Some v.
-  Proof using.
-    induction l.
-    intros.
-    simpl.
-    repeat (break_match; simpl).
-    subst. 
-    congruence.
+ Proof using.
+    induction l; intros; simpl; repeat (break_match; simpl); subst; congruence.
   Qed.
 
   Lemma get_set_same' :
