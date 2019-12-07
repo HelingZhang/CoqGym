@@ -78,7 +78,7 @@ class GNN(nn.Module):
         h_old = nodes['h_v']
         input = torch.cat((h_old, avg_m_1, avg_m_0), 1) # input to MLP_aggr.
         num_nodes = input.size(0)
-        h_new = [self.MLP_aggr[t].forward(input[i,:]) for i in range(num_nodes)]
+        h_new = torch.stack([self.MLP_aggr[t].forward(input[i,:]) for i in range(num_nodes)])
         h_new = h_new + h_old
         return {'h_v': h_new}
 
