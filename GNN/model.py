@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 
+H_SIZE_1 = 256 # size of the 1st hidden layer. 256 in the paper.
+H_SIZE_2 = 128 # size of the 2nd hidden layer. 128 in the paper.
+EMB_SIZE = 128 # size of embeddings. 128 in the paper.
+
 class MLP(nn.Module):
     """
     used for MLP_v and MLP_e in the main model.
@@ -8,13 +12,13 @@ class MLP(nn.Module):
     """
     def __init__(self, input_size, output_size, dropout_rate=0.5):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, 256)
+        self.fc1 = nn.Linear(input_size, H_SIZE_1)
         self.relu1 = nn.ReLU()
         self.drop1 = nn.Dropout(dropout_rate)
-        self.fc2 = nn.Linear(256, 128)
+        self.fc2 = nn.Linear(H_SIZE_1, H_SIZE_2)
         self.relu2 = nn.ReLU()
         self.drop2 = nn.Dropout(dropout_rate)
-        self.fc3 = nn.Linear(128, output_size)
+        self.fc3 = nn.Linear(H_SIZE_2, output_size)
 
     def forward(self, x):
         out = self.fc1(x)
@@ -36,16 +40,16 @@ class GNN(nn.Module):
         super(GNN, self).__init__()
         self.T = T
         self.t = None # current time step.
-        self.MLP_v = MLP(128, 128)
-        self.MLP_e = MLP(1, 128) # why?
-        self.MLP_edge_1 = nn.ModuleList([MLP(128*3, 128)]) # computes message from parent nodes.
-        self.MLP_edge_0 = nn.ModuleList([MLP(128*3, 128)]) # computes message from child nodes.
-        self.MLP_aggr = MLP(128*3, 128)
+        self.MLP_v = MLP(EMB_SIZE, EMB_SIZE)
+        self.MLP_e = MLP(1, EMB_SIZE) # why?
+        self.MLP_edge_1 = nn.ModuleList([MLP(EMB_SIZE*3, EMB_SIZE)]) # computes message from parent nodes.
+        self.MLP_edge_0 = nn.ModuleList([MLP(EMB_SIZE*3, EMB_SIZE)]) # computes message from child nodes.
+        self.MLP_aggr = MLP(EMB_SIZE*3, EMB_SIZE)
 
     def message_1(self, edges):
         """
         computes the message along an edge whose label is 1.
-        edges - all edges.
+        edges - an EdgeBatch, representing all edges.
         t - current time step.
         """
         t = self.t
@@ -57,7 +61,7 @@ class GNN(nn.Module):
     def message_0(self, edges):
         """
         computes the message along an edge whose label is 0.
-        edges - all edges.
+        edges - an EdgeBatch, representing all edges.
         t - current time step.
         """
         t = self.t
@@ -69,16 +73,19 @@ class GNN(nn.Module):
     def update(self, nodes):
         """
         the update function.
-        v - a node.
+        nodes - a NodeBatch, representation all nodes.
         t - current time step.
         """
         t = self.t
         avg_m_1 = torch.mean(nodes.mailbox['m_1'], dim=1)
         avg_m_0 = torch.mean(nodes.mailbox['m_0'], dim=1)
-        h_old = nodes['h_v']
-        input = torch.cat((h_old, avg_m_1, avg_m_0), 1) # input to MLP_aggr.
-        num_nodes = input.size(0)
-        h_new = torch.stack([self.MLP_aggr[t].forward(input[i,:]) for i in range(num_nodes)])
+        h_old = nodes.data['h_v']
+        input = torch.cat((h_old, avg_m_1, avg_m_0), 1)
+        avg_m_1_size = avg_m_1.size()
+        avg_m_0_size = avg_m_0.size()
+        h_old_size = h_old.size()
+        input_size = input.size()# input to MLP_aggr.
+        h_new = self.MLP_aggr.forward(input)
         h_new = h_new + h_old
         return {'h_v': h_new}
 
@@ -104,7 +111,7 @@ class GNN(nn.Module):
             g.send(g.edges(), self.message_1)
             g.send(g.edges(), self.message_0)
             # update according to message.
-            g.recv(g.nodes, self.update)
+            g.recv(g.nodes(), self.update)
 
         # readout
         # diverges from original paper

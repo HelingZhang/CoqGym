@@ -2,7 +2,7 @@ import dgl
 import networkx
 import torch
 import numpy as np
-from model import GNN
+from model import GNN, EMB_SIZE
 
 model = GNN(1)
 
@@ -32,9 +32,21 @@ g.add_edges(dst, src, {'l_e': torch.zeros(78)})
 e_1 = torch.from_numpy(np.arange(0, 78))
 e_0 = torch.from_numpy(np.arange(78, 156))
 
-g.ndata['x_v'] = torch.rand(34, 128)
-g.ndata['h_v'] = torch.zeros(34, 128)
-g.edata['h_e'] = torch.zeros(156, 128)
+g.ndata['x_v'] = torch.rand(34, EMB_SIZE)
+g.ndata['h_v'] = torch.zeros(34, EMB_SIZE)
+g.edata['h_e'] = torch.zeros(156, EMB_SIZE)
+
+# # a smaller graph.
+# g.add_nodes(4)
+# edge_list = [(1, 0), (2, 0), (2, 1), (3, 0)]
+# src, dst = tuple(zip(*edge_list))
+# g.add_edges(src, dst, {'l_e': torch.ones(4)})
+# g.add_edges(dst, src, {'l_e': torch.zeros(4)})
+# e_1 = torch.from_numpy(np.arange(0, 4))
+# e_0 = torch.from_numpy(np.arange(4, 8))
+# g.ndata['x_v'] = torch.rand(4, EMB_SIZE)
+# g.ndata['h_v'] = torch.zeros(4, EMB_SIZE)
+# g.edata['h_e'] = torch.zeros(8, EMB_SIZE)
 
 # pass it through.
 g_1 = model.forward(e_1, e_0, g)
