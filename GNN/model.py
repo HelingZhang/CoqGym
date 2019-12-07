@@ -108,8 +108,8 @@ class GNN(nn.Module):
         for t in range(self.T):
             self.t = t
             # compute the messages
-            g.send(g.edges(), self.message_1)
-            g.send(g.edges(), self.message_0)
+            g.send(g.find_edges(e_1), self.message_1)
+            g.send(g.find_edges(e_0), self.message_0)
             # update according to message.
             g.recv(g.nodes(), self.update)
 
