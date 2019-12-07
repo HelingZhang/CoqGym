@@ -214,14 +214,15 @@ class FileEnv:
 if __name__ == '__main__':
     import argparse
 
-    argparser = argparse.ArgumentParser(description='test evaluation api.')
-    argparser.add_argument('--file', type=str, help='The path of target json file, which is obtained from *.meta (refer to README)')
-    args = argparser.parse_args()
+    # argparser = argparse.ArgumentParser(description='test evaluation api.')
+    # argparser.add_argument('--file', type=str, help='The path of target json file, which is obtained from *.meta (refer to README)')
+    # args = argparser.parse_args()
 
     # f = 'data/additions/binary_strat.json'
-    # f = 'data/StructTact/Assoc.json'
+    f = 'data/StructTact/Assoc.json'
     # f = 'data/demo/scratch.json'
-    f = args.file
+    # f = 'data/three-gap/prop_elem.json'
+    # f = args.file
 
     # target_proof = ['get_set_same',
     #                 'mult_S_1'

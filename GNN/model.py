@@ -35,6 +35,7 @@ class GNN(nn.Module):
     T - total number of hops.
     """
     def __init__(self, T):
+        super(GNN, self).__init__()
         self.T = T
         self.t = None # current time step.
         self.MLP_v = MLP(128, 128)
@@ -51,12 +52,13 @@ class GNN(nn.Module):
         """
         t = self.t
         u, v = e.src, e.dst
+        a = u['h_v'].size()
         message = self.MLP_edge_1[t].forward(
-            torch.cat(e.src['h_v'], e.dst['h_v'], e['h_e']), 0
+            torch.cat((e.src['h_v'], e.dst['h_v'], e.data['h_e']), 1).view(-1, 1).squeeze()
         )
         return {'m_1': message}
 
-    def message_c(self, e):
+    def message_0(self, e):
         """
         computes the message along an edge whose label is 0.
         e - an edge.
@@ -65,7 +67,7 @@ class GNN(nn.Module):
         t = self.t
         u, v = e.src, e.dst
         message = self.MLP_edge_0[t].forward(
-            torch.cat(e.src['h_v'], e.dst['h_v'], e['h_e']), 0
+            torch.cat((e.src['h_v'], e.dst['h_v'], e['h_e']), 0)
         )
         return {'m_0': message}
 
@@ -92,21 +94,21 @@ class GNN(nn.Module):
         e_1 - array of edges labeled as 1.
         e_0 - array of edges labeled as 0.
         """
-        for v in g.nodes():
+        for v in range(len(g.nodes())):
             # initialize node embeddings from (the embedding of) node labels.
-            x_v = g.nodes[v]['x_v']
-            g.nodes[v]['h_v'] = self.MLP_v.forward(x_v)
-        for e in g.edges():
+            x_v = g.nodes[v].data['x_v']
+            g.nodes[v].data['h_v'] = self.MLP_v.forward(x_v)
+        for e in range(len(g.edges()[0])):
             # initialize edge embeddings from edge labels.
-            l_e = g.nodes[e]['l_e']
-            g.edges[e]['h_e'] = self.MLP_e.forward(l_e) # abusing nn.
+            l_e = g.edges[e].data['l_e']
+            g.edges[e].data['h_e'] = self.MLP_e.forward(l_e).view(1, -1) # abusing nn.
 
         # message passing.
         for t in range(self.T):
             self.t = t
             # compute the messages
-            g.send(e_1, self.message_1)
-            g.send(e_0, self.message_0)
+            g.send(g.edges(), self.message_1)
+            g.send(g.edges(), self.message_0)
             # update according to message.
             g.recv(g.nodes, self.update)
 
