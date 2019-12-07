@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.functional as F
-import dgl
 
 class MLP(nn.Module):
     """
@@ -44,48 +42,44 @@ class GNN(nn.Module):
         self.MLP_edge_0 = nn.ModuleList([MLP(128*3, 128)]) # computes message from child nodes.
         self.MLP_aggr = MLP(128*3, 128)
 
-    def message_1(self, e):
+    def message_1(self, edges):
         """
         computes the message along an edge whose label is 1.
-        e - an edge.
+        edges - all edges.
         t - current time step.
         """
         t = self.t
-        u, v = e.src, e.dst
-        a = u['h_v'].size()
-        message = self.MLP_edge_1[t].forward(
-            torch.cat((e.src['h_v'], e.dst['h_v'], e.data['h_e']), 1).view(-1, 1).squeeze()
-        )
+        input = torch.cat((edges.src['h_v'], edges.dst['h_v'], edges.data['h_e']), 1) # input to MLP_edge_1.
+        num_edges = input.size(0)
+        message = torch.stack([self.MLP_edge_1[t].forward(input[i,:]) for i in range(num_edges)])
         return {'m_1': message}
 
-    def message_0(self, e):
+    def message_0(self, edges):
         """
         computes the message along an edge whose label is 0.
-        e - an edge.
+        edges - all edges.
         t - current time step.
         """
         t = self.t
-        u, v = e.src, e.dst
-        message = self.MLP_edge_0[t].forward(
-            torch.cat((e.src['h_v'], e.dst['h_v'], e['h_e']), 0)
-        )
+        input = torch.cat((edges.src['h_v'], edges.dst['h_v'], edges.data['h_e']), 1) # input to MLP_edge_0.
+        num_edges = input.size(0)
+        message = torch.stack([self.MLP_edge_0[t].forward(input[i, :]) for i in range(num_edges)])
         return {'m_0': message}
 
-    def update(self, v):
+    def update(self, nodes):
         """
         the update function.
         v - a node.
         t - current time step.
         """
         t = self.t
-        avg_m_1 = torch.mean(v.mailbox['m_1'], dim=1)
-        avg_m_0 = torch.mean(v.mailbox['m_0'], dim=1)
-        h_old = v['h_v']
-        h_new = self.MLP_aggr[t].forward(
-            torch.cat((h_old, avg_m_1, avg_m_0))
-        )
+        avg_m_1 = torch.mean(nodes.mailbox['m_1'], dim=1)
+        avg_m_0 = torch.mean(nodes.mailbox['m_0'], dim=1)
+        h_old = nodes['h_v']
+        input = torch.cat((h_old, avg_m_1, avg_m_0), 1) # input to MLP_aggr.
+        num_nodes = input.size(0)
+        h_new = [self.MLP_aggr[t].forward(input[i,:]) for i in range(num_nodes)]
         h_new = h_new + h_old
-        h_new = F.relu(h_new)
         return {'h_v': h_new}
 
     def forward(self, e_1, e_0, g):
