@@ -1,10 +1,10 @@
 import dgl
-import networkx
 import torch
 import numpy as np
 from model import GNN, EMB_SIZE
 
-model = GNN(1)
+device = 'cuda'
+model = GNN(5, device).to(device)
 
 # build a fake graph. Copying from other code
 g = dgl.DGLGraph()

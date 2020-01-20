@@ -36,14 +36,17 @@ class GNN(nn.Module):
     deals only with connected graphs.
     T - total number of hops.
     """
-    def __init__(self, T):
+    def __init__(self, T, device):
         super(GNN, self).__init__()
         self.T = T
+        self.device = device
         self.t = None # current time step.
         self.MLP_v = MLP(EMB_SIZE, EMB_SIZE)
         self.MLP_e = MLP(1, EMB_SIZE) # why?
-        self.MLP_edge_1 = nn.ModuleList([MLP(EMB_SIZE*3, EMB_SIZE)]) # computes message from parent nodes.
-        self.MLP_edge_0 = nn.ModuleList([MLP(EMB_SIZE*3, EMB_SIZE)]) # computes message from child nodes.
+        # self.edge_emb_1 = torch.rand(EMB_SIZE)
+        # self.edge_emb_0 = torch.rand(EMB_SIZE)
+        self.MLP_edge_1 = nn.ModuleList([MLP(EMB_SIZE*3, EMB_SIZE)]*self.T) # computes message from parent nodes.
+        self.MLP_edge_0 = nn.ModuleList([MLP(EMB_SIZE*3, EMB_SIZE)]*self.T) # computes message from child nodes.
         self.MLP_aggr = MLP(EMB_SIZE*3, EMB_SIZE)
 
     def message_1(self, edges):
@@ -53,7 +56,7 @@ class GNN(nn.Module):
         t - current time step.
         """
         t = self.t
-        input = torch.cat((edges.src['h_v'], edges.dst['h_v'], edges.data['h_e']), 1) # input to MLP_edge_1.
+        input = torch.cat((edges.src['h_v'], edges.dst['h_v'], edges.data['h_e']), 1).to(self.device) # input to MLP_edge_1.
         num_edges = input.size(0)
         message = torch.stack([self.MLP_edge_1[t].forward(input[i,:]) for i in range(num_edges)])
         return {'m_1': message}
@@ -65,7 +68,7 @@ class GNN(nn.Module):
         t - current time step.
         """
         t = self.t
-        input = torch.cat((edges.src['h_v'], edges.dst['h_v'], edges.data['h_e']), 1) # input to MLP_edge_0.
+        input = torch.cat((edges.src['h_v'], edges.dst['h_v'], edges.data['h_e']), 1).to(self.device) # input to MLP_edge_0.
         num_edges = input.size(0)
         message = torch.stack([self.MLP_edge_0[t].forward(input[i, :]) for i in range(num_edges)])
         return {'m_0': message}
@@ -79,7 +82,7 @@ class GNN(nn.Module):
         t = self.t
         avg_m_1 = torch.mean(nodes.mailbox['m_1'], dim=1)
         avg_m_0 = torch.mean(nodes.mailbox['m_0'], dim=1)
-        h_old = nodes.data['h_v']
+        h_old = nodes.data['h_v'].to(self.device)
         input = torch.cat((h_old, avg_m_1, avg_m_0), 1)
         avg_m_1_size = avg_m_1.size()
         avg_m_0_size = avg_m_0.size()
@@ -87,7 +90,7 @@ class GNN(nn.Module):
         input_size = input.size()# input to MLP_aggr.
         h_new = self.MLP_aggr.forward(input)
         h_new = h_new + h_old
-        return {'h_v': h_new}
+        return {'h_v': h_new.to('cpu')}
 
     def forward(self, e_1, e_0, g):
         """
@@ -97,12 +100,13 @@ class GNN(nn.Module):
         """
         for v in range(len(g.nodes())):
             # initialize node embeddings from (the embedding of) node labels.
-            x_v = g.nodes[v].data['x_v']
-            g.nodes[v].data['h_v'] = self.MLP_v.forward(x_v)
+            x_v = g.nodes[v].data['x_v'].to(self.device)
+            g.nodes[v].data['h_v'] = self.MLP_v.forward(x_v).to('cpu')
         for e in range(len(g.edges()[0])):
             # initialize edge embeddings from edge labels.
-            l_e = g.edges[e].data['l_e']
-            g.edges[e].data['h_e'] = self.MLP_e.forward(l_e).view(1, -1) # abusing nn.
+            l_e = g.edges[e].data['l_e'].to(self.device)
+            g.edges[e].data['h_e'] = self.MLP_e.forward(l_e).view(1, -1).to('cpu') # abusing nn?
+            # g.edges[e].data['h_e'] = self.edge_emb_0.view(1, -1) if l_e == 0 else self.edge_emb_1.view(1, -1)
 
         # message passing.
         for t in range(self.T):
@@ -114,7 +118,8 @@ class GNN(nn.Module):
             g.recv(g.nodes(), self.update)
 
         # readout
-        # diverges from original paper
+        # diverges from original paper.
+        # TODO: implement readout. resolve possible incompatibality due to output dimensions.
         return g
 
 
@@ -126,4 +131,3 @@ class GNN(nn.Module):
 #     - for each edge e:
 #         - l_e: 0 or 1.
 #         - h_e: embedding derived from 0 or 1. The paper derived this by passing this trough a MLP. Why not just make trainable embeddings for 0 and 1? Wired.
-# TODO: compatibality with coqgym

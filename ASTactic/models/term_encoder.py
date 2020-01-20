@@ -122,66 +122,70 @@ class ForgetGates(nn.Module):
        
         return c_remain
 
+# TreeLSTM
+# class TermEncoder(nn.Module):
+#
+#     def __init__(self, opts):
+#         super().__init__()
+#         self.opts = opts
+#         self.input_gate = InputOutputUpdateGate(opts.term_embedding_dim, nonlinear=torch.sigmoid)
+#         self.forget_gates = ForgetGates(opts.term_embedding_dim, opts)
+#         self.output_gate = InputOutputUpdateGate(opts.term_embedding_dim, nonlinear=torch.sigmoid)
+#         self.update_cell = InputOutputUpdateGate(opts.term_embedding_dim, nonlinear=torch.tanh)
+#
+#
+#     def forward(self, term_asts):
+#         # the height of a node determines when it can be processed
+#         height2nodes = defaultdict(set)
+#
+#         def get_height(node):
+#             height2nodes[node.height].add(node)
+#
+#         for ast in term_asts:
+#             traverse_postorder(ast, get_height)
+#
+#         memory_cells = {} # node -> memory cell
+#         hidden_states = {} # node -> hidden state
+#         #return torch.zeros(len(term_asts), self.opts.term_embedding_dim).to(self.opts.device)
+#
+#         # compute the embedding for each node
+#         for height in sorted(height2nodes.keys()):
+#             nodes_at_height = list(height2nodes[height])
+#             # sum up the hidden states of the children
+#             h_sum = []
+#             c_remains = []
+#             x = torch.zeros(len(nodes_at_height), len(nonterminals), device=self.opts.device) \
+#                      .scatter_(1, torch.tensor([nonterminals.index(node.data) for node in nodes_at_height],
+#                                                  device=self.opts.device).unsqueeze(1), 1.0)
+#
+#             h_sum = torch.zeros(len(nodes_at_height), self.opts.term_embedding_dim).to(self.opts.device)
+#             h_children = []
+#             c_children = []
+#             for j, node in enumerate(nodes_at_height):
+#                 h_children.append([])
+#                 c_children.append([])
+#                 for c in node.children:
+#                     h = hidden_states[c]
+#                     h_sum[j] += h
+#                     h_children[-1].append(h)
+#                     c_children[-1].append(memory_cells[c])
+#             c_remains = self.forget_gates(x, h_children, c_children)
+#
+#             # gates
+#             xh = torch.cat([x, h_sum], dim=1)
+#             i_gate = self.input_gate(xh)
+#             o_gate = self.output_gate(xh)
+#             u = self.update_cell(xh)
+#             cells = i_gate * u + c_remains
+#             hiddens = o_gate * torch.tanh(cells)
+#
+#
+#             for i, node in enumerate(nodes_at_height):
+#                 memory_cells[node] = cells[i]
+#                 hidden_states[node] = hiddens[i]
+#
+#         return torch.stack([hidden_states[ast] for ast in term_asts])
 
-class TermEncoder(nn.Module):
 
-    def __init__(self, opts):
-        super().__init__()
-        self.opts = opts
-        self.input_gate = InputOutputUpdateGate(opts.term_embedding_dim, nonlinear=torch.sigmoid)
-        self.forget_gates = ForgetGates(opts.term_embedding_dim, opts)
-        self.output_gate = InputOutputUpdateGate(opts.term_embedding_dim, nonlinear=torch.sigmoid)
-        self.update_cell = InputOutputUpdateGate(opts.term_embedding_dim, nonlinear=torch.tanh)
-
-
-    def forward(self, term_asts):
-        # the height of a node determines when it can be processed
-        height2nodes = defaultdict(set)
-
-        def get_height(node):
-            height2nodes[node.height].add(node)
-
-        for ast in term_asts:
-            traverse_postorder(ast, get_height)
-
-        memory_cells = {} # node -> memory cell
-        hidden_states = {} # node -> hidden state
-        #return torch.zeros(len(term_asts), self.opts.term_embedding_dim).to(self.opts.device)
-
-        # compute the embedding for each node
-        for height in sorted(height2nodes.keys()):
-            nodes_at_height = list(height2nodes[height])
-            # sum up the hidden states of the children
-            h_sum = []
-            c_remains = []
-            x = torch.zeros(len(nodes_at_height), len(nonterminals), device=self.opts.device) \
-                     .scatter_(1, torch.tensor([nonterminals.index(node.data) for node in nodes_at_height], 
-                                                 device=self.opts.device).unsqueeze(1), 1.0)
-
-            h_sum = torch.zeros(len(nodes_at_height), self.opts.term_embedding_dim).to(self.opts.device)
-            h_children = []
-            c_children = []
-            for j, node in enumerate(nodes_at_height):
-                h_children.append([])
-                c_children.append([])
-                for c in node.children:
-                    h = hidden_states[c]
-                    h_sum[j] += h
-                    h_children[-1].append(h)
-                    c_children[-1].append(memory_cells[c])
-            c_remains = self.forget_gates(x, h_children, c_children) 
-
-            # gates
-            xh = torch.cat([x, h_sum], dim=1)
-            i_gate = self.input_gate(xh)
-            o_gate = self.output_gate(xh)
-            u = self.update_cell(xh) 
-            cells = i_gate * u + c_remains
-            hiddens = o_gate * torch.tanh(cells)
-
-
-            for i, node in enumerate(nodes_at_height):
-                memory_cells[node] = cells[i]
-                hidden_states[node] = hiddens[i]
-       
-        return torch.stack([hidden_states[ast] for ast in term_asts])
+# GNN
+from GNN.term_encoder import TermEncoder
