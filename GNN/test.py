@@ -26,15 +26,15 @@ edge_list = [(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2),
              (33, 31), (33, 32)]
 # add edges two lists of nodes: src and dst
 src, dst = tuple(zip(*edge_list))
-g.add_edges(src, dst, {'l_e': torch.ones(78)})
-g.add_edges(dst, src, {'l_e': torch.zeros(78)})
+g.add_edges(src, dst, {'l_e': torch.ones(78).to(device)})
+g.add_edges(dst, src, {'l_e': torch.zeros(78).to(device)})
 
-e_1 = torch.from_numpy(np.arange(0, 78))
-e_0 = torch.from_numpy(np.arange(78, 156))
+e_1 = torch.from_numpy(np.arange(0, 78)).to(device)
+e_0 = torch.from_numpy(np.arange(78, 156)).to(device)
 
-g.ndata['x_v'] = torch.rand(34, EMB_SIZE)
-g.ndata['h_v'] = torch.zeros(34, EMB_SIZE)
-g.edata['h_e'] = torch.zeros(156, EMB_SIZE)
+g.ndata['x_v'] = torch.rand(34, EMB_SIZE).to(device)
+g.ndata['h_v'] = torch.zeros(34, EMB_SIZE).to(device)
+g.edata['h_e'] = torch.zeros(156, EMB_SIZE).to(device)
 
 # # a smaller graph.
 # g.add_nodes(4)
@@ -50,3 +50,4 @@ g.edata['h_e'] = torch.zeros(156, EMB_SIZE)
 
 # pass it through.
 g_1 = model.forward(e_1, e_0, g)
+print("done")

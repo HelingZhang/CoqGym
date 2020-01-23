@@ -122,7 +122,7 @@ class ForgetGates(nn.Module):
        
         return c_remain
 
-# TreeLSTM
+# # TreeLSTM
 # class TermEncoder(nn.Module):
 #
 #     def __init__(self, opts):
